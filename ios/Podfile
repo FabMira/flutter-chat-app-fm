@@ -1,0 +1,20 @@
+platform :ios, '12.0'
+install! 'cocoapods', :deterministic_uuids => false
+
+# Ruta correcta al SDK de Flutter
+flutter_root = File.expand_path('/Users/fabriziom/development/flutter') # Ajusta esta ruta si es diferente
+
+# Carga el script de Flutter
+require File.join(flutter_root, 'packages', 'flutter_tools', 'bin', 'podhelper.rb')
+
+target 'Runner' do
+  use_frameworks!
+  use_modular_headers!
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+  end
+end
