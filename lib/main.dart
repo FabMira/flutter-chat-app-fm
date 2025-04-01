@@ -1,4 +1,4 @@
-import 'package:chat/config/router/approuter.dart';
+import 'package:chat/config/router/app_router.dart';
 import 'package:flutter/material.dart';
 
 void main() => runApp(const MyApp());
