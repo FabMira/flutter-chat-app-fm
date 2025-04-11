@@ -1,5 +1,9 @@
-import 'package:chat/presentation/widgets/widgets.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:chat/helper/mostrar_alerta.dart';
+import 'package:chat/presentation/widgets/widgets.dart';
+import 'package:chat/services/auth_service.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -16,9 +20,13 @@ class RegisterPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Logo(title: 'Registro',),
+                Logo(title: 'Registro'),
                 _Form(),
-                Label(ruta: 'login', labelCuenta: '¿Ya tienes una cuenta?', labelRuta: 'Ingresa ahora!',),
+                Label(
+                  ruta: 'login',
+                  labelCuenta: '¿Ya tienes una cuenta?',
+                  labelRuta: 'Ingresa ahora!',
+                ),
                 const Text(
                   'Términos y condiciones de uso',
                   style: TextStyle(fontWeight: FontWeight.w200),
@@ -44,6 +52,7 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -68,11 +77,31 @@ class __FormState extends State<_Form> {
             isPassword: true,
           ),
           BotonAzul(
-            label: 'ingrese',
-            onPressed: () {
-              print('email: ${emailCtrl.text}');
-              print('password ${passCtrl.text}');
-            },
+            text: 'ingrese',
+            onPressed:
+                authService.autenticando
+                    ? () {}
+                    : () async {
+                      FocusScope.of(context).unfocus();
+                      final registerOk = await authService.register(
+                        nameCtrl.text,
+                        emailCtrl.text,
+                        passCtrl.text,
+                      );
+                      if (registerOk['ok']) {
+                        if (context.mounted) {
+                          context.pushReplacementNamed('usuarios');
+                        }
+                      } else {
+                        if (context.mounted) {
+                          mostrarAlerta(
+                            context,
+                            'Registro incorrecto',
+                            registerOk['msg'].toString(),
+                          );
+                        }
+                      }
+                    },
           ),
         ],
       ),

@@ -1,33 +1,27 @@
 import 'package:flutter/material.dart';
 
 class BotonAzul extends StatelessWidget {
-  final String label;
-  // final String email;
-  // final String password;
-  final VoidCallback onPressed;
-  const BotonAzul({
-    super.key,
-    required this.label,
-    // required this.email,
-    // required this.password, 
-    required this.onPressed,
-  });
+  final String text;
+  final Function onPressed;
+
+  const BotonAzul({super.key, required this.text, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        elevation: 2,
-        backgroundColor: Colors.blue,
-        shape: StadiumBorder(),
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.all(Colors.blue),
+        foregroundColor: WidgetStateProperty.all(Colors.white),
+        elevation: WidgetStateProperty.all(2),
+        shape: WidgetStateProperty.all(StadiumBorder()),
       ),
-      onPressed: onPressed,
+      onPressed: () => onPressed(),
       child: SizedBox(
         width: double.infinity,
         height: 55,
         child: Center(
           child: Text(
-            label,
+            text,
             style: TextStyle(color: Colors.white, fontSize: 17),
           ),
         ),

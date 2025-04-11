@@ -2,30 +2,36 @@ import 'package:go_router/go_router.dart';
 import 'package:chat/presentation/pages/pages.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/chat',
+  initialLocation: '/loading',
   routes: [
     GoRoute(
-      path: '/', 
+      path: '/',
+      name: 'home', 
       builder: (context, state) => HomePage()
     ),
     GoRoute(
-      path: '/loading', 
+      path: '/loading',
+      name: 'loading',
       builder: (context, state) => LoadingPage()
     ),
     GoRoute(
       path: '/login', 
+      name: 'login',
       builder: (context, state) => LoginPage()
     ),
     GoRoute(
       path: '/chat', 
+      name: 'chat',
       builder: (context, state) => ChatPage()
     ),
     GoRoute(
       path: '/register', 
+      name: 'register',
       builder: (context, state) => RegisterPage()
     ),
     GoRoute(
       path: '/usuarios', 
+      name: 'usuarios',
       builder: (context, state) => UsuariosPage()
     ),
   ],

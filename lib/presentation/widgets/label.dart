@@ -21,7 +21,7 @@ class Label extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         GestureDetector(
-          onTap: () => context.pushReplacement('/$ruta'),
+          onTap: () => context.pushReplacementNamed(ruta),
           child: Text(
             labelRuta,
             style: TextStyle(

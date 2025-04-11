@@ -1,5 +1,9 @@
+import 'package:chat/helper/mostrar_alerta.dart';
 import 'package:chat/presentation/widgets/widgets.dart';
+import 'package:chat/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -16,9 +20,13 @@ class LoginPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Logo(title: 'Messenger',),
+                Logo(title: 'Messenger'),
                 _Form(),
-                Label(ruta: 'register', labelCuenta: '¿No tienes cuenta?', labelRuta: 'Crea una Ahora!',),
+                Label(
+                  ruta: 'register',
+                  labelCuenta: '¿No tienes cuenta?',
+                  labelRuta: 'Crea una Ahora!',
+                ),
                 const Text(
                   'Términos y condiciones de uso',
                   style: TextStyle(fontWeight: FontWeight.w200),
@@ -43,6 +51,7 @@ class __FormState extends State<_Form> {
 
   @override
   Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context);
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -61,11 +70,23 @@ class __FormState extends State<_Form> {
             isPassword: true,
           ),
           BotonAzul(
-            label: 'ingrese',
-            onPressed: () {
-              print('email: ${emailCtrl.text}');
-              print('password ${passCtrl.text}');
-            },
+            text: 'ingrese',
+            onPressed:
+                authService.autenticando
+                    ? () {}
+                    : () async {
+                      FocusScope.of(context).unfocus();
+                      final loginOk = await authService.login(
+                        emailCtrl.text.trim(),
+                        passCtrl.text.trim(),
+                      );
+                      if (loginOk) {
+                        // TODO: conectar a nuestro socket server
+                        if(context.mounted) context.pushReplacementNamed('usuarios');
+                      } else {
+                        if (context.mounted) mostrarAlerta( context, 'Login incorrecto', 'Revise sus credenciales nuevamente' );
+                      }
+                    },
           ),
         ],
       ),
