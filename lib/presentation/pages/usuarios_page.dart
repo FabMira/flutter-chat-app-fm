@@ -1,76 +1,88 @@
 import 'package:flutter/material.dart';
-import 'package:chat/services/auth_service.dart';
-import 'package:chat/presentation/models/models.dart';
-import 'package:provider/provider.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class UsuariosPage extends StatefulWidget {
+import 'package:go_router/go_router.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
+
+import 'package:chat/presentation/models/models.dart';
+import 'package:chat/services/services.dart';
+
+class UsuariosPage extends ConsumerStatefulWidget {
   const UsuariosPage({super.key});
 
   @override
-  State<UsuariosPage> createState() => _UsuariosPageState();
+  UsuariosPageState createState() => UsuariosPageState();
 }
 
-class _UsuariosPageState extends State<UsuariosPage> {
+class UsuariosPageState extends ConsumerState<UsuariosPage> {
+  List<Usuario> users = [];
   final RefreshController _refreshController = RefreshController(
     initialRefresh: false,
   );
 
-  final users = [
-    Usuario(uid: '1', nombre: 'María', email: 'test1@test.com', online: true),
-    Usuario(
-      uid: '2',
-      nombre: 'Melissa',
-      email: 'test2@test.com',
-      online: false,
-    ),
-    Usuario(
-      uid: '3',
-      nombre: 'Fabrizio',
-      email: 'test3@test.com',
-      online: true,
-    ),
-  ];
+  Future<void> _onRefresh() async {
+    final users = await ref.refresh(usersListProvider.future);
+    if (users.isNotEmpty) {
+      _refreshController.refreshCompleted();
+    } else {
+      _refreshController.refreshFailed();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
-    final usuario = authService.usuario;
+    final usersAsync = ref.watch(usersListProvider);
+    final authService = ref.watch(authProvider.notifier);
+    final socketService = ref.watch(socketServiceProvider.notifier);
+    final usuario = ref.watch(authProvider);
     return Scaffold(
       appBar: AppBar(
-        title: Text(usuario?.nombre ?? 'Sin nombre'),
+        title: usuario.when(
+          data: (usuario) {
+            return Text(usuario?.nombre ?? 'Sin nombre');
+          },
+          loading: () => const Text('Cargando...'),
+          error: (error, stackTrace) => const Text('Error'),
+        ),
+        // Text(usuario?.nombre ?? 'Sin nombre'),
         elevation: 1,
         backgroundColor: Colors.white,
         leading: IconButton(
           icon: Icon(Icons.exit_to_app_outlined),
           onPressed: () {
-            // TODO: desconectarnos del socket server
-            AuthService.deleteToken();
+            socketService.disconnect();
+            authService.deleteToken();
             if (context.mounted) context.pushReplacementNamed('login');
           },
         ),
         actions: [
           Container(
             margin: EdgeInsets.only(right: 10),
-            child: Icon(Icons.check_circle, color: Colors.blue[400]),
-            // child: Icon(Icons.check_circle, color: Colors.red),
+            child:
+                (ref.watch(socketServiceProvider) == ServerStatus.online)
+                    ? Icon(Icons.check_circle, color: Colors.blue[400])
+                    : Icon(Icons.check_circle, color: Colors.red),
           ),
         ],
       ),
       body: SmartRefresher(
         controller: _refreshController,
         enablePullDown: true,
-        onRefresh: _cargarUsuarios,
+        onRefresh: _onRefresh,
         header: WaterDropHeader(
           complete: Icon(Icons.check, color: Colors.blue[400]),
           waterDropColor: Colors.blue,
         ),
-        child: _listViewUsuarios(),
+        child: usersAsync.when(
+          data: (users) => _listViewUsuarios(users),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stackTrace) => Center(child: Text('Error: $error')),
+        ),
       ),
     );
   }
 
-  ListView _listViewUsuarios() {
+  ListView _listViewUsuarios(List<Usuario> users) {
     return ListView.separated(
       physics: BouncingScrollPhysics(),
       itemCount: users.length,
@@ -95,11 +107,12 @@ class _UsuariosPageState extends State<UsuariosPage> {
           borderRadius: BorderRadius.circular(100),
         ),
       ),
+      onTap: () {
+        ref.read(usuarioParaProvider.notifier).setUsuario(usuario);
+        if (context.mounted) {
+          context.pushNamed('chat');
+        }
+      },
     );
-  }
-
-  _cargarUsuarios() async {
-    await Future.delayed(Duration(milliseconds: 1000));
-    _refreshController.refreshCompleted();
   }
 }

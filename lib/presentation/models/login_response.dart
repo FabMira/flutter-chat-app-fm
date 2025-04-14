@@ -11,9 +11,9 @@ LoginResponse loginResponseFromJson(String str) => LoginResponse.fromJson(json.d
 String loginResponseToJson(LoginResponse data) => json.encode(data.toJson());
 
 class LoginResponse {
-    bool ok;
-    Usuario usuario;
-    String token;
+    final bool ok;
+    final Usuario? usuario;
+    final String token;
 
     LoginResponse({
         required this.ok,
@@ -23,13 +23,15 @@ class LoginResponse {
 
     factory LoginResponse.fromJson(Map<String, dynamic> json) => LoginResponse(
         ok: json["ok"],
-        usuario: Usuario.fromJson(json["usuarioDB"]),
+        usuario: json["usuarioDB"] != null
+          ? Usuario.fromJson(json["usuarioDB"])
+          : null,
         token: json["token"],
     );
 
     Map<String, dynamic> toJson() => {
         "ok": ok,
-        "usuarioDB": usuario.toJson(),
+        "usuarioDB": usuario?.toJson(),
         "token": token,
     };
 }

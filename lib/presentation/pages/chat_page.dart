@@ -1,23 +1,79 @@
 import 'dart:io';
 
+import 'package:chat/presentation/models/models.dart';
 import 'package:chat/presentation/widgets/chat_message.dart';
+import 'package:chat/services/services.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:socket_io_client/socket_io_client.dart' as IO;
 
-class ChatPage extends StatefulWidget {
+class ChatPage extends ConsumerStatefulWidget {
   const ChatPage({super.key});
 
   @override
-  State<ChatPage> createState() => _ChatPageState();
+  ChatPageState createState() => ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
+class ChatPageState extends ConsumerState<ChatPage>
+    with TickerProviderStateMixin {
   final _textController = TextEditingController();
   final _focusNode = FocusNode();
   bool _estaEscribiendo = false;
   final List<ChatMessage> _messages = [];
+  late IO.Socket _socket;
+
+  @override
+  void initState() {
+    super.initState();
+    _socket = ref.read(socketServiceProvider.notifier).socket;
+    _socket.on('mensaje-personal', _escucharMensaje);
+    _cargarHistorial(ref.read(usuarioParaProvider).uid);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _cargarHistorial(ref.read(usuarioParaProvider).uid);
+  }
+
+  void _cargarHistorial(String usuarioId) async {
+    List<Mensaje> chat = await ref.refresh(getChatProvider(usuarioId).future);
+
+    final history = chat.map(
+      (m) => ChatMessage(
+        texto: m.mensaje,
+        uid: m.de,
+        animationController: AnimationController(
+          vsync: this,
+          duration: Duration(milliseconds: 0),
+        )..forward(),
+      ),
+    );
+
+    setState(() {
+      _messages.insertAll(0, history);
+    });
+  }
+
+  void _escucharMensaje(dynamic payload) {
+    ChatMessage message = ChatMessage(
+      texto: payload['mensaje'],
+      uid: payload['de'],
+      animationController: AnimationController(
+        vsync: this,
+        duration: Duration(milliseconds: 300),
+      ),
+    );
+    setState(() {
+      _messages.insert(0, message);
+    });
+    message.animationController.forward();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final usuarioPara = ref.watch(usuarioParaProvider);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
@@ -26,11 +82,14 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
             CircleAvatar(
               maxRadius: 14,
               backgroundColor: Colors.blue[100],
-              child: const Text('Te', style: TextStyle(fontSize: 12)),
+              child: Text(
+                usuarioPara.nombre.substring(0, 2),
+                style: TextStyle(fontSize: 12),
+              ),
             ),
             SizedBox(height: 3),
-            const Text(
-              'Melissa Flores',
+            Text(
+              usuarioPara.nombre,
               style: TextStyle(color: Colors.black87, fontSize: 12),
             ),
           ],
@@ -120,7 +179,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     if (text.isNotEmpty) {
       final newMessage = ChatMessage(
         texto: text,
-        uid: '123',
+        uid: ref.read(authProvider).value!.uid,
         animationController: AnimationController(
           vsync: this,
           duration: Duration(milliseconds: 200),
@@ -135,11 +194,16 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     setState(() {
       _estaEscribiendo = false;
     });
+    ref.read(socketServiceProvider.notifier).emit('mensaje-personal', {
+      'de': ref.read(authProvider).value!.uid,
+      'para': ref.read(usuarioParaProvider).uid,
+      'mensaje': text,
+    });
   }
 
   @override
   void dispose() {
-    //TODO: off del socket
+    _socket.off('mensaje-personal');
 
     for (ChatMessage message in _messages) {
       message.animationController.dispose();

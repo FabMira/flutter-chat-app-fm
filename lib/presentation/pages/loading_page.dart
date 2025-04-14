@@ -1,36 +1,40 @@
-import 'package:chat/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 
-class LoadingPage extends StatelessWidget {
+
+import 'package:chat/services/services.dart';
+
+
+class LoadingPage extends ConsumerWidget {
   const LoadingPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: FutureBuilder(
         builder: (context, snapshot) {
           return _LoadingScreen();
         },
-        future: checkLoginState(context),
+        future: checkLoginState(context, ref),
       ),
     );
   }
 }
 
-Future checkLoginState(BuildContext context) async {
-  final authService = Provider.of<AuthService>(context, listen: false);
+Future checkLoginState(BuildContext context, WidgetRef ref) async {
+  final authService = ref.read(authProvider.notifier);
+  final socketService = ref.read(socketServiceProvider.notifier);
   final autenticado = await authService.isLoggedIn();
 
   if (autenticado) {
-    // TODO: conectar al socket server
+    socketService.connect();
     if (context.mounted) {
       context.pushReplacementNamed('usuarios');
-    } else {
-          if (context.mounted) {
+    } 
+  }else {
+    if (context.mounted) {
       context.pushReplacementNamed('login');
-    }
     }
   }
 }

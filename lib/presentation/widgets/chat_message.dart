@@ -1,6 +1,8 @@
+import 'package:chat/services/services.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ChatMessage extends StatelessWidget {
+class ChatMessage extends ConsumerWidget {
   final String texto;
   final String uid;
   final AnimationController animationController;
@@ -8,7 +10,8 @@ class ChatMessage extends StatelessWidget {
   const ChatMessage({super.key, required this.texto, required this.uid, required this.animationController});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final usuario = ref.watch(authProvider);
     return FadeTransition(
       opacity: animationController,
       child: SizeTransition(
@@ -17,7 +20,7 @@ class ChatMessage extends StatelessWidget {
           curve: Curves.easeOut
         ),
         child: Container(
-          child: uid == '123' 
+          child: ( uid == usuario.value!.uid )
             ? _myMessage() 
             : _notMyMessage()),
       ));

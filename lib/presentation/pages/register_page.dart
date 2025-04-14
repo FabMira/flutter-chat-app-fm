@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
+import 'package:chat/services/services.dart';
 import 'package:chat/helper/mostrar_alerta.dart';
 import 'package:chat/presentation/widgets/widgets.dart';
-import 'package:chat/services/auth_service.dart';
 
 class RegisterPage extends StatelessWidget {
   const RegisterPage({super.key});
@@ -40,19 +40,20 @@ class RegisterPage extends StatelessWidget {
   }
 }
 
-class _Form extends StatefulWidget {
+class _Form extends ConsumerStatefulWidget {
   @override
-  __FormState createState() => __FormState();
+  FormState createState() => FormState();
 }
 
-class __FormState extends State<_Form> {
+class FormState extends ConsumerState<_Form> {
   final emailCtrl = TextEditingController();
   final nameCtrl = TextEditingController();
   final passCtrl = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
+    final authService = ref.watch(authProvider.notifier);
+    final socketService = ref.watch(socketServiceProvider.notifier);
     return Container(
       margin: EdgeInsets.only(top: 40),
       padding: EdgeInsets.symmetric(horizontal: 50),
@@ -89,6 +90,7 @@ class __FormState extends State<_Form> {
                         passCtrl.text,
                       );
                       if (registerOk['ok']) {
+                        socketService.connect();
                         if (context.mounted) {
                           context.pushReplacementNamed('usuarios');
                         }
